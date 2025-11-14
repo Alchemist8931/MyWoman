@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Привет, Любимая 🌙</title>
+
+  <!-- Comfortaa from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --glass-bg: rgba(255,255,255,.12);
+      --glass-bright: rgba(255,255,255,.18);
+      --text: #fff;
+      --fade-dur: .6s;
+      --rise-dur: 1s;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: "Comfortaa", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background:
+        linear-gradient(0deg, rgba(0,0,0,.45), rgba(0,0,0,.45)),
+        url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1400&q=80')
+        no-repeat center / cover fixed;
+      color: var(--text);
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(720px, 92vw);
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+      border-radius: 24px;
+      padding: clamp(18px, 4vw, 32px);
+      box-shadow: 0 8px 36px rgba(0,0,0,.35);
+      animation: rise var(--rise-dur) ease forwards;
+    }
+
+    h1, .end-text {
+      margin: 0;
+      line-height: 1.55;
+      font-weight: 400;
+      font-size: clamp(18px, 3.6vw, 28px);
+    }
+
+    .lead {
+      opacity: 0;
+      transform: translateY(12px);
+      animation: textIn .9s ease forwards .15s;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 12px 26px;
+      background: var(--glass-bg);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: clamp(15px, 3.2vw, 18px);
+      transition: transform .2s ease, background .25s ease, border-color .25s ease, opacity .2s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover { transform: translateY(-1px); background: var(--glass-bright); }
+    .btn:active { transform: scale(.98); }
+
+    .choice {
+      display: none;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .choice .btn { flex: 1 1 220px; min-width: 140px; }
+
+    /* Smooth fades */
+    .fade-in   { animation: fadeIn var(--fade-dur) ease forwards; }
+    .fade-out  { animation: fadeOut var(--fade-dur) ease forwards; }
+
+    @keyframes fadeIn   { from {opacity: 0; transform: translateY(6px)} to {opacity: 1; transform: translateY(0)} }
+    @keyframes fadeOut  { from {opacity: 1; transform: translateY(0)} to {opacity: 0; transform: translateY(-6px)} }
+    @keyframes textIn   { from {opacity: 0; transform: translateY(12px)} to {opacity: 1; transform: translateY(0)} }
+    @keyframes rise     { from {opacity: 0; transform: translateY(12px)} to {opacity: 1; transform: translateY(0)} }
+
+    /* Mobile-friendly spacing */
+    @media (max-width: 420px){
+      .container { padding: 18px; border-radius: 18px; }
+      .choice { gap: 10px; }
+    }
+
+    /* Small helper note at the bottom (optional) */
+    .tiny {
+      position: fixed; inset-inline: 0; bottom: 8px;
+      font-size: 11px; opacity: .55; letter-spacing: .02em;
+      text-align: center; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" aria-hidden="true"></div>
+
+  <div class="container" role="region" aria-label="Сообщение для любимой">
+    <h1 id="text" class="lead">Привет, Любимая 🌙</h1>
+
+    <button class="btn" id="nextBtn" type="button" aria-controls="text">Далее</button>
+
+    <div class="choice" id="choiceBtns" aria-live="polite">
+      <button class="btn" id="yesBtn" type="button">Мне нравится план 💛</button>
+      <!-- Безопасный вариант без упоминания насилия -->
+      <button class="btn" id="noBtn" type="button">Давай без прелюдий 😠</button>
+    </div>
+  </div>
+
+  <div class="tiny" aria-hidden="true">Музыка включится при первом нажатии</div>
+
+  <audio id="bgMusic" loop>
+    <source src="https://dl.dropboxusercontent.com/scl/fi/9arrkfp20cjsv0a7t3cpm/ambient-background-347405_115805.mp3?rlkey=1jaxyfkyp4gmmyqjrqcg1hf9f&st=dcxkxh6v&dl=0" type="audio/mpeg">
+  </audio>
+
+  <script>
+  // ===== CONFIG =====
+  // Самый простой способ для статики (GitHub Pages): FormSubmit -> письмо на почту
+  // Поменяй почту ниже на свою (или оставь как есть, если подходит):
+  const FORM_URL = "https://formsubmit.co/godflyfire@gmail.com"; // можно заменить на свой адрес
+  const SEND_DECISIONS = true; // выключи, если не нужно слать уведомления
+
+  // Необязательная Telegram-отправка: оставлено как заготовка.
+  // Если когда-нибудь захочешь — создай бота и Chat ID, затем сними комментарии.
+  // !!! Хранить токен в фронтенде небезопасно, лучше прокинуть его через свой backend или Google Apps Script !!!
+  // const TG_BOT_TOKEN = "PASTE_YOUR_BOT_TOKEN";
+  // const TG_CHAT_ID   = "PASTE_YOUR_CHAT_ID";
+
+  // ===== CONTENT =====
+  const texts = [
+    "Привет, Любимая 🌙",
+    "Начинается день путешествия домой.",
+    "Я очень скучал.",
+    "Надеюсь, сборы и дорога будут лёгкими.",
+    "Денег я так и не заработал к твоему приезду((, и всё будет не так как я фантазировал((",
+    "Но мы тебя очень ждём с детками.",
+    "Вчера весь день прибирались, готовили с ними.",
+    "Я буду тебя ждать по прилёту в аэропорту.",
+    "Наконец-то проведём вечер вместе в чистой и уютной нашей квартирке.",
+    "Я тебя накормлю вкусным чахохбили и сделаю брускетты.",
+    "После этого хотелось бы, чтобы ты отдохнула с дороги.",
+    "Как немного поспишь, я намажу тебя медленно кремушком.",
+    "медленно… медленно… проглаживая каждый сантиметр…",
+    "твоих красивых ручек…",
+    "твоих красивых ножек…",
+    "исцелую твою шею…",
+    "твою попу…",
+    "а после…",
+    "я попрошу надеть что-нибудь красивое…",
+    "и мы забудем о приличиях, утоляя голод близости и страсти, накопившийся за время разлуки",
+    "Действуем по плану? 💛"
+  ];
+
+  // ===== DOM =====
+  const textEl = document.getElementById("text");
+  const nextBtn = document.getElementById("nextBtn");
+  const choiceWrap = document.getElementById("choiceBtns");
+  const yesBtn = document.getElementById("yesBtn");
+  const noBtn = document.getElementById("noBtn");
+  const bgMusic = document.getElementById("bgMusic");
+
+  // ===== STATE =====
+  let i = 0;                      // текущий индекс текста
+  let musicStarted = false;
+  let noCount = 0;
+  const MAX_NO = 3;
+
+  // ===== AUDIO =====
+  function fadeInMusic(targetVol = 0.5, step = 0.02, everyMs = 120){
+    try { bgMusic.volume = 0; } catch(e) {}
+    const tick = setInterval(() => {
+      try {
+        if (bgMusic.volume + step < targetVol) {
+          bgMusic.volume = Math.min(targetVol, bgMusic.volume + step);
+        } else {
+          clearInterval(tick);
+        }
+      } catch(e){ clearInterval(tick); }
+    }, everyMs);
+  }
+  function startMusic(){
+    if (musicStarted) return;
+    musicStarted = true;
+    const p = bgMusic.play();
+    if (p && p.then){
+      p.then(() => fadeInMusic()).catch(() => {
+        // повторная попытка
+        setTimeout(() => bgMusic.play().then(() => fadeInMusic()).catch(()=>{}), 150);
+      });
+    }
+  }
+
+  // ===== HELPERS =====
+  function switchText(nextHtml){
+    // плавный уход текущего контента
+    textEl.classList.remove("fade-in");
+    textEl.classList.add("fade-out");
+    nextBtn.style.pointerEvents = "none";
+
+    setTimeout(() => {
+      textEl.innerHTML = `<div class="end-text">${nextHtml}</div>`;
+      textEl.classList.remove("fade-out");
+      textEl.classList.add("fade-in");
+      nextBtn.style.pointerEvents = "auto";
+    }, 600); // должно совпадать с --fade-dur
+  }
+
+  function showChoices(){
+    nextBtn.style.display = "none";
+    choiceWrap.style.display = "flex";
+    choiceWrap.classList.add("fade-in");
+  }
+
+  // Отправка выбора на почту через FormSubmit (статично, без backend)
+  function sendDecision(status, extra){
+    if (!SEND_DECISIONS) return;
+
+    const subject = status === "AGREED"
+      ? "🎉 Любимая СОГЛАСИЛАСЬ"
+      : "😔 Любимая ОТКЛОНИЛА (3 раза)";
+
+    const data = new FormData();
+    data.append("_subject", subject);
+    data.append("_captcha", "false");
+    data.append("Статус", status);
+    data.append("Сообщение", extra || "");
+    data.append("Время", new Date().toLocaleString());
+
+    // Пытаемся послать так, чтобы страница не перезагружалась
+    fetch(FORM_URL, { method: "POST", body: data, mode: "no-cors" })
+      .then(() => console.log("Decision sent (FormSubmit):", status))
+      .catch(err => console.warn("FormSubmit error:", err));
+
+    // ==== НЕБЕЗОПАСНЫЙ ПРИМЕР ДЛЯ TELEGRAM (оставлен как справка) ====
+    // if (TG_BOT_TOKEN && TG_CHAT_ID) {
+    //   const msg = encodeURIComponent(`Статус: ${status}\nТекст: ${extra || ""}\nВремя: ${new Date().toLocaleString()}`);
+    //   fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage?chat_id=${TG_CHAT_ID}&text=${msg}`)
+    //     .catch(()=>{});
+    // }
+  }
+
+  // ===== WIRES =====
+  // Устанавливаем стартовый текст явно (на всякий)
+  textEl.innerHTML = `<div class="end-text">${texts[0]}</div>`;
+
+  nextBtn.addEventListener("click", () => {
+    if (!musicStarted) startMusic();
+
+    if (i < texts.length - 1) {
+      i++;
+      switchText(texts[i]);
+
+      if (i === texts.length - 1) {
+        // последнее сообщение -> показать варианты
+        setTimeout(showChoices, 620);
+      }
+    }
+  });
+
+  yesBtn.addEventListener("click", () => {
+    const msg = "Тогда беги скорее собираться 🌙<br>Я буду течь, ой, то есть ждать, тебя в аэропорту 😉";
+    switchText(msg);
+    choiceWrap.style.display = "none";
+    sendDecision("AGREED", "Пользователь выбрал: Мне нравится план 💛");
+  });
+
+  noBtn.addEventListener("click", () => {
+    noCount++;
+    if (noCount >= MAX_NO) {
+      switchText("Очень жаль 😔");
+      choiceWrap.style.display = "none";
+      sendDecision("REJECTED", "Отклонение после 3 попыток");
+    } else {
+      switchText("Так дело не пойдёт 😏<br>Попробуй сделать правильный выбор 💛");
+      choiceWrap.style.display = "none";
+      setTimeout(() => {
+        switchText(texts[texts.length - 1]);
+        choiceWrap.style.display = "flex";
+      }, 2500);
+    }
+  });
+
+  // Маленькая оптимизация для iOS: запуск аудио по первому касанию где угодно
+  window.addEventListener("touchstart", () => { if (!musicStarted) startMusic(); }, { once: true });
+  </script>
+</body>
+</html>
